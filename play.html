@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#6a5cff">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="TRILEXIS">
+<title>TRILEXIS Spelling Showdown</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#f4f2ff;--card:#ffffff;--ink:#1d1b3a;--mute:#6b6890;--pri:#6a5cff;--pri2:#8f7bff;
+  --ok:#16a34a;--bad:#dc2626;--warn:#f59e0b;--line:#e4e0ff;--okbg:#dcfce7;--badbg:#fee2e2;--warnbg:#fef3c7;
+  color-scheme:light dark;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#14122b;--card:#1f1c42;--ink:#f1efff;--mute:#a9a5d6;--line:#34306a;--okbg:#14532d;--badbg:#7f1d1d;--warnbg:#78350f}
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-text-size-adjust:100%}
+body{padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+.wrap{max-width:640px;margin:0 auto;padding:18px 14px 40px}
+.hero{text-align:center;padding:18px 0 8px}
+.logo{font-size:52px;line-height:1}
+h1{margin:6px 0 4px;font-size:34px;letter-spacing:3px;color:var(--pri)}
+h2{margin:0 0 8px;font-size:20px}
+.tag{margin:0;color:var(--mute)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin:14px 0;box-shadow:0 4px 18px rgba(106,92,255,.08)}
+.stack{display:flex;flex-direction:column;gap:10px}
+.btn{font:inherit;font-weight:700;font-size:17px;border:0;border-radius:14px;padding:14px 16px;cursor:pointer;background:var(--pri);color:#fff;width:100%}
+.btn:active{transform:scale(.98)}
+.btn.ghost{background:transparent;color:var(--pri);border:2px solid var(--pri)}
+.btn.ok{background:var(--ok)}
+.btn.bad{background:var(--bad)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn.sm{width:auto;font-size:14px;padding:8px 12px}
+.inp,textarea,select{font:inherit;width:100%;padding:12px 14px;border:2px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink)}
+.inp:focus,textarea:focus,select:focus{outline:none;border-color:var(--pri)}
+.inp.big{font-size:24px;text-align:center;font-weight:700;letter-spacing:1px}
+.inp.code{text-transform:uppercase;letter-spacing:8px;text-align:center;font-size:28px;font-weight:800}
+textarea{min-height:170px;resize:vertical;line-height:1.5}
+label{display:block;font-weight:700;margin:12px 0 6px}
+.mute{color:var(--mute)}.center{text-align:center}
+.notice{border-radius:14px;padding:12px 14px;margin:14px 0;background:var(--warnbg);border:1px solid var(--warn)}
+.roomcode{font-size:56px;font-weight:900;letter-spacing:10px;text-align:center;color:var(--pri);margin:4px 0}
+.chips{display:flex;flex-wrap:wrap;gap:6px;max-height:190px;overflow:auto}
+.chip{background:var(--bg);border:1px solid var(--line);padding:5px 10px;border-radius:999px;font-size:14px}
+.bar{height:12px;border-radius:999px;background:var(--line);overflow:hidden}
+.bar>i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--pri),var(--pri2));transition:width .2s linear}
+.timer{font-size:40px;font-weight:900;text-align:center;color:var(--pri)}
+.word{font-size:44px;font-weight:900;text-align:center;letter-spacing:2px;margin:6px 0;word-break:break-word}
+.hint{text-align:center;color:var(--mute);font-style:italic;margin:4px 0 10px}
+.pill{display:inline-block;padding:4px 12px;border-radius:999px;font-weight:700;font-size:13px;background:var(--line);color:var(--pri)}
+.verdict{border-radius:16px;padding:16px;text-align:center;font-size:20px;font-weight:800}
+.verdict.good{background:var(--okbg);color:var(--ok)}
+.verdict.miss{background:var(--badbg);color:var(--bad)}
+.verdict .sm{display:block;font-size:15px;font-weight:600;margin-top:6px;color:var(--ink)}
+.board{display:flex;flex-direction:column;gap:6px;max-height:420px;overflow:auto}
+.row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:12px;background:var(--bg);border:1px solid var(--line)}
+.row.me{border-color:var(--pri);background:var(--card);box-shadow:0 0 0 2px var(--pri) inset}
+.rk{width:30px;font-weight:900;color:var(--pri)}
+.nm{flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sc{font-weight:800}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:600;z-index:9;max-width:90%;text-align:center}
+.link{word-break:break-all;font-size:13px;color:var(--mute);text-align:center}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+(function(){
+'use strict';
+
+/* ======================================================================
+   🟡 STEP 1 – PASTE YOUR FIREBASE SETTINGS HERE (see the setup guide)
+   ====================================================================== */
+const FIREBASE_CONFIG = {
+  databaseURL: "https://trilexisadscoinc-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "trilexisadscoinc"
+};
+const MAX_PLAYERS = 50;
+
+/* ---------- setup ---------- */
+const libOk = !!window.firebase;
+const configured = !/YOUR-PROJECT/.test(FIREBASE_CONFIG.databaseURL);
+let db = null, offset = 0, online = false, initError = '';
+if (libOk && configured) {
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.database();
+    db.ref('.info/serverTimeOffset').on('value', s => { offset = s.val() || 0; });
+    db.ref('.info/connected').on('value', s => {
+      online = !!s.val();
+      const el = document.getElementById('conn'); if (el) el.textContent = connLabel();
+    });
+  } catch (e) { console.error(e); initError = String(e && e.message || e); }
+}
+function problem(){
+  if (!libOk) return 'The Firebase library did not load. A school/office network, VPN or ad blocker may be blocking it. Try phone data or another browser.';
+  if (!configured) return 'The Firebase database address is missing in index.html.';
+  if (!db) return 'Firebase could not start. ' + initError;
+  return '';
+}
+function connLabel(){ return problem() ? '🔴 Not ready' : (online ? '🟢 Online' : '🟡 Connecting…'); }
+const now = () => Date.now() + offset;
+const TS = () => firebase.database.ServerValue.TIMESTAMP;
+
+/* ---------- helpers ---------- */
+const $app = document.getElementById('app');
+const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const rnd = n => Array.from({length:n}, () => CHARS[Math.floor(Math.random()*CHARS.length)]).join('');
+const uid = () => Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4);
+const norm = s => String(s == null ? '' : s).trim().toLowerCase().replace(/\s+/g,' ');
+const store = {
+  get:(k)=>{ try{return localStorage.getItem(k);}catch(e){return null;} },
+  set:(k,v)=>{ try{localStorage.setItem(k,v);}catch(e){} },
+  del:(k)=>{ try{localStorage.removeItem(k);}catch(e){} }
+};
+
+function h(tag, attrs, ...kids){
+  const e = document.createElement(tag);
+  for (const k in (attrs||{})) {
+    const v = attrs[k];
+    if (k === 'class') e.className = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else if (k === 'value') e.value = v;
+    else if (v !== false && v != null) e.setAttribute(k, v);
+  }
+  for (const c of kids.flat()) { if (c == null || c === false) continue; e.append(c); }
+  return e;
+}
+const btn = (label, fn, cls, disabled) => h('button', {class:'btn '+(cls||''), onclick:fn, disabled: disabled ? '' : false}, label);
+function mount(...nodes){ $app.replaceChildren(h('div',{class:'wrap'}, nodes)); window.scrollTo(0,0); }
+function toast(msg){
+  const t = h('div',{class:'toast'}, msg); document.body.append(t);
+  setTimeout(()=>t.remove(), 2800);
+}
+function speak(text){
+  if (!('speechSynthesis' in window) || !text) return false;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US'; u.rate = 0.8; speechSynthesis.speak(u);
+    return true;
+  } catch(e){ return false; }
+}
+function primeSpeech(){ // unlock audio on iPhone/Android after a tap
+  try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } catch(e){}
+}
+function parseWords(text){
+  const seen = new Set(), out = [];
+  String(text||'').split('\n').forEach(line => {
+    const parts = line.split('|');
+    const w = (parts[0]||'').trim();
+    const hint = (parts.slice(1).join('|')||'').trim();
+    if (!w || seen.has(norm(w))) return;
+    seen.add(norm(w)); out.push({w, hint});
+  });
+  return out.slice(0, 200);
+}
+
+/* ---------- state ---------- */
+const fresh = () => ({role:null, code:null, pid:null, hostId:null, meta:null, players:{}, answers:{}, words:[], unsubs:[], viewUnsubs:[], viewKey:null, revealing:null});
+let S = fresh();
+let tick = null;
+const ref = p => db.ref('rooms/' + S.code + (p ? '/' + p : ''));
+function listen(r, ev, cb){ r.on(ev, cb); S.unsubs.push(() => r.off(ev, cb)); }
+function clearView(){ S.viewUnsubs.forEach(f => f()); S.viewUnsubs = []; clearInterval(tick); }
+function cleanup(){ clearView(); S.unsubs.forEach(f => f()); S.unsubs = []; try{speechSynthesis.cancel();}catch(e){} }
+function runTimer(textEl, barEl, startedAt, endsAt, onEnd){
+  clearInterval(tick);
+  const total = Math.max(1, endsAt - startedAt);
+  const f = () => {
+    const left = Math.max(0, endsAt - now());
+    textEl.textContent = Math.ceil(left/1000) + 's';
+    barEl.style.width = (100*left/total) + '%';
+    if (left <= 0) { clearInterval(tick); if (onEnd) onEnd(); }
+  };
+  f(); tick = setInterval(f, 200);
+}
+function ranked(){
+  return Object.keys(S.players).map(pid => Object.assign({pid}, S.players[pid]))
+    .sort((a,b) => (b.correct||0)-(a.correct||0) || (a.ms||0)-(b.ms||0) || String(a.name).localeCompare(String(b.name)));
+}
+function boardRows(limit, me){
+  return ranked().slice(0, limit).map((p,i) =>
+    h('div',{class:'row'+(p.pid===me?' me':'')},
+      h('span',{class:'rk'}, i===0?'🥇':i===1?'🥈':i===2?'🥉':String(i+1)),
+      h('span',{class:'nm'}, p.name),
+      h('span',{class:'sc'}, (p.correct||0)+' ✓')));
+}
+function refreshLive(){
+  const n = Object.keys(S.players).length;
+  const pc = document.getElementById('pcount'); if (pc) pc.textContent = n + ' / ' + MAX_PLAYERS;
+  const pl = document.getElementById('plist');
+  if (pl) pl.replaceChildren(...Object.values(S.players).map(p => h('span',{class:'chip'}, p.name)));
+  const ac = document.getElementById('acount');
+  if (ac) ac.textContent = Object.keys(S.answers||{}).length + ' / ' + n + ' answered';
+  const bd = document.getElementById('board');
+  if (bd) bd.replaceChildren(...boardRows(S.role==='host' ? 50 : 10, S.pid));
+}
+
+/* ======================================================================
+   HOME
+   ====================================================================== */
+function home(){
+  cleanup(); S = fresh();
+  const saved = (()=>{ try{return JSON.parse(store.get('trilexis_host')||'null');}catch(e){return null;} })();
+  const pre = (new URLSearchParams(location.search).get('room')||'').toUpperCase();
+  mount(
+    h('div',{class:'hero'},
+      h('div',{class:'logo'},'📖'),
+      h('h1',null,'TRILEXIS'),
+      h('p',{class:'tag'}, '⚡ Spelling Showdown: up to ' + MAX_PLAYERS + ' players, the host picks the words, most words wins!')),
+    problem() && h('div',{class:'notice'}, '🟡 Multiplayer problem: ' + problem() + ' Practice mode still works.'),
+    h('div',{class:'card stack'},
+      btn('🎮 Host a game', hostStart),
+      btn('🔑 Join a game', () => { if (problem()) return toast(problem()); joinScreen(pre); }, 'ghost'),
+      btn('🧑 Practice alone', practice, 'ghost'),
+      saved && !problem() && btn('↩️ Resume my room ' + saved.code, () => resumeHost(saved), 'ghost')),
+    h('p',{class:'center mute',style:'font-size:12px'}, 'Version 2 · ', h('span',{id:'conn'}, connLabel()))
+  );
+  if (pre && !problem()) joinScreen(pre);
+}
+
+/* ======================================================================
+   PRACTICE (offline)
+   ====================================================================== */
+function practice(){
+  cleanup();
+  const list = ['necessary','rhythm','separate','definitely','embarrass','conscience','occurrence','accommodate','privilege','maintenance']
+    .sort(() => Math.random() - .5);
+  let i = 0, score = 0;
+  function ask(){
+    if (i >= list.length) {
+      mount(h('div',{class:'card center'}, h('h2',null,'🏁 Done!'), h('p',{class:'word'}, score + ' / ' + list.length), btn('🏠 Home', home)));
+      return;
+    }
+    const w = list[i];
+    const input = h('input',{class:'inp big',type:'text',autocomplete:'off',autocapitalize:'off',autocorrect:'off',spellcheck:'false',placeholder:'Type the spelling…'});
+    const fb = h('div',{});
+    const go = () => {
+      if (input.disabled) return;
+      input.disabled = true;
+      const ok = norm(input.value) === w; if (ok) score++;
+      fb.replaceChildren(h('div',{class:'verdict '+(ok?'good':'miss')}, ok ? '✅ Correct!' : '❌ It is: ' + w), h('div',{style:'height:10px'}), btn('Next ▶', () => { i++; ask(); }));
+    };
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+    mount(h('div',{class:'card stack'},
+      h('span',{class:'pill'}, 'Word ' + (i+1) + ' of ' + list.length),
+      btn('🔊 Hear the word', () => speak(w), 'ghost'),
+      input, btn('Check', go), fb,
+      btn('🏠 Leave practice', home, 'ghost')));
+    speak(w); setTimeout(() => input.focus(), 50);
+  }
+  ask();
+}
+
+/* ======================================================================
+   HOST
+   ====================================================================== */
+async function hostStart(){
+  if (problem()) return toast(problem());
+  try {
+    let code, tries = 0;
+    do {
+      code = rnd(4);
+      const s = await db.ref('rooms/' + code + '/meta').get();
+      if (!s.exists()) break;
+    } while (++tries < 12);
+    const hostId = uid();
+    await db.ref('rooms/' + code).set({ meta:{ host:hostId, status:'lobby', idx:-1, created:TS() }, count:0 });
+    const rec = { code, hostId };
+    store.set('trilexis_host', JSON.stringify(rec));
+    enterHost(rec);
+  } catch(e){ console.error(e); toast('Could not create the room. Check your Firebase setup.'); }
+}
+async function resumeHost(rec){
+  try {
+    const s = await db.ref('rooms/' + rec.code + '/meta').get();
+    if (!s.exists()) { store.del('trilexis_host'); toast('That room was closed.'); return home(); }
+    enterHost(rec);
+  } catch(e){ toast('Could not reach the room.'); }
+}
+function enterHost(rec){
+  cleanup(); S = fresh();
+  S.role = 'host'; S.code = rec.code; S.hostId = rec.hostId;
+  S.words = parseWords(store.get('trilexis_wordtext') || '');
+  listen(ref('players'), 'value', s => { S.players = s.val() || {}; refreshLive(); checkAll(); });
+  listen(ref('meta'), 'value', s => {
+    const m = s.val();
+    if (!m) { store.del('trilexis_host'); toast('Room closed.'); return home(); }
+    S.meta = m;
+    const key = m.status + ':' + m.idx;
+    if (key !== S.viewKey) { S.viewKey = key; renderHost(); }
+  });
+}
+function joinLink(){ return location.origin + location.pathname + '?room=' + S.code; }
+
+function renderHost(){
+  clearView();
+  const m = S.meta;
+  if (m.status === 'lobby') return hostLobby();
+  if (m.status === 'word') return hostWord();
+  if (m.status === 'reveal') return hostReveal();
+  return hostDone();
+}
+function hostLobby(){
+  const ta = h('textarea',{id:'wordsTa',placeholder:'one word per line\nOptional hint after a bar:\nbeautiful | very pleasing to look at\nnecessary'}, '');
+  ta.value = store.get('trilexis_wordtext') || '';
+  ta.addEventListener('input', () => store.set('trilexis_wordtext', ta.value));
+  const time = h('input',{class:'inp',id:'timeIn',type:'number',min:'5',max:'180',value:'30'});
+  const mode = h('select',{id:'audioSel'},
+    h('option',{value:'students'}, '🔊 Each student hears the word on their own device'),
+    h('option',{value:'host'}, '🎤 I will read the word aloud myself'));
+  mount(
+    h('div',{class:'card'},
+      h('p',{class:'mute center',style:'margin:0'},'Students: open the game link and enter this room code'),
+      h('div',{class:'roomcode'}, S.code),
+      h('div',{class:'link'}, joinLink()),
+      h('div',{style:'height:10px'}),
+      btn('📋 Copy join link', () => { (navigator.clipboard ? navigator.clipboard.writeText(joinLink()) : Promise.reject()).then(() => toast('Link copied!'), () => toast('Copy it from the screen.')); }, 'ghost')),
+    h('div',{class:'card'},
+      h('h2',null, '👥 Players ', h('span',{class:'pill',id:'pcount'}, '0 / ' + MAX_PLAYERS)),
+      h('div',{class:'chips',id:'plist'})),
+    h('div',{class:'card'},
+      h('h2',null,'✏️ Your words'),
+      h('p',{class:'mute',style:'margin:0 0 8px'},'Type or paste your words. Add a hint after "|" if you want one shown to students.'),
+      ta,
+      h('label',null,'⏱️ Seconds per word'), time,
+      h('label',null,'How should students hear the word?'), mode),
+    h('div',{class:'card stack'},
+      btn('▶️ Start the game', startGame),
+      btn('🗑️ Close room', closeRoom, 'ghost'))
+  );
+  refreshLive();
+}
+async function startGame(){
+  const text = document.getElementById('wordsTa').value;
+  const words = parseWords(text);
+  if (!words.length) return toast('Add at least one word first.');
+  if (!Object.keys(S.players).length && !confirm('No students have joined yet. Start anyway?')) return;
+  const time = Math.min(180, Math.max(5, parseInt(document.getElementById('timeIn').value, 10) || 30));
+  const audio = document.getElementById('audioSel').value === 'students';
+  store.set('trilexis_wordtext', text);
+  S.words = words;
+  primeSpeech();
+  try { await ref('meta').update({ total: words.length, time, audio }); await nextWord(); }
+  catch(e){ toast('Could not start. Try again.'); }
+}
+async function nextWord(){
+  const idx = (S.meta.idx == null ? -1 : S.meta.idx) + 1;
+  if (idx >= S.words.length) return ref('meta').update({ status:'done' });
+  const w = S.words[idx];
+  const start = now();
+  S.revealing = null;
+  await ref('meta').update({
+    status:'word', idx, startedAt:start, endsAt:start + S.meta.time*1000,
+    word: S.meta.audio ? w.w : null, hint: w.hint || null
+  });
+}
+function hostWord(){
+  const m = S.meta, w = S.words[m.idx] || {w:'(word list lost – reveal and continue)', hint:''};
+  const tText = h('div',{class:'timer'}), bar = h('i'), barBox = h('div',{class:'bar'}, bar);
+  S.answers = {};
+  const r = ref('answers/' + m.idx);
+  const cb = r.on('value', s => { S.answers = s.val() || {}; refreshLive(); checkAll(); });
+  S.viewUnsubs.push(() => r.off('value', cb));
+  mount(h('div',{class:'card stack'},
+    h('div',{class:'center'}, h('span',{class:'pill'}, 'Word ' + (m.idx+1) + ' of ' + m.total)),
+    tText, barBox,
+    h('div',{class:'word'}, w.w),
+    w.hint && h('div',{class:'hint'}, w.hint),
+    btn('🔊 Say it again', () => speak(w.w), 'ghost'),
+    h('div',{class:'center'}, h('span',{class:'pill',id:'acount'}, '0 / 0 answered')),
+    btn('⏭️ Reveal now', reveal, 'ghost')));
+  refreshLive();
+  runTimer(tText, bar, m.startedAt, m.endsAt, () => setTimeout(reveal, 1500));
+}
+function checkAll(){
+  const m = S.meta; if (!m || m.status !== 'word' || S.role !== 'host') return;
+  const n = Object.keys(S.players).length;
+  if (n > 0 && Object.keys(S.answers||{}).length >= n) setTimeout(reveal, 700);
+}
+async function reveal(){
+  const m = S.meta;
+  if (!m || m.status !== 'word' || S.revealing === m.idx) return;
+  S.revealing = m.idx;
+  try {
+    const word = (S.words[m.idx] || {w:''}).w;
+    const snap = await ref('answers/' + m.idx).get();
+    const ans = snap.val() || {};
+    const upd = {}, ok = {};
+    Object.keys(S.players).forEach(pid => {
+      const p = S.players[pid], a = ans[pid];
+      const good = !!a && a.t <= m.endsAt + 2500 && norm(a.text) === norm(word);
+      ok[pid] = good;
+      if (good) {
+        upd['players/' + pid + '/correct'] = (p.correct||0) + 1;
+        upd['players/' + pid + '/ms'] = (p.ms||0) + Math.max(0, a.t - m.startedAt);
+      }
+    });
+    upd['results/' + m.idx] = { word, ok };
+    upd['meta/status'] = 'reveal';
+    await db.ref('rooms/' + S.code).update(upd);
+  } catch(e){ console.error(e); S.revealing = null; toast('Reveal failed. Tap Reveal again.'); }
+}
+function hostReveal(){
+  const m = S.meta, w = S.words[m.idx] || {w:''};
+  const last = m.idx + 1 >= m.total;
+  const right = Object.keys(S.players).length; // refreshed below
+  mount(
+    h('div',{class:'card stack center'},
+      h('span',{class:'pill'}, 'Word ' + (m.idx+1) + ' of ' + m.total),
+      h('div',{class:'word'}, w.w),
+      h('div',{id:'rightcount',class:'mute'}, ''),
+      btn(last ? '🏆 Finish and show winners' : 'Next word ▶', nextWord)),
+    h('div',{class:'card'}, h('h2',null,'🏅 Leaderboard'), h('div',{class:'board',id:'board'}))
+  );
+  refreshLive();
+  ref('results/' + m.idx).get().then(s => {
+    const r = s.val(); if (!r) return;
+    const okN = Object.values(r.ok || {}).filter(Boolean).length;
+    const el = document.getElementById('rightcount');
+    if (el) el.textContent = '✅ ' + okN + ' of ' + Object.keys(r.ok||{}).length + ' spelled it right';
+  });
+}
+function hostDone(){
+  mount(
+    h('div',{class:'card center'}, h('div',{class:'logo'},'🏆'), h('h2',null,'Final results')),
+    h('div',{class:'card'}, h('div',{class:'board',id:'board'})),
+    h('div',{class:'card stack'},
+      btn('🗑️ Close room and go home', closeRoom),
+      h('p',{class:'mute center',style:'margin:0'},'Closing the room deletes its data so Firebase stays tidy.'))
+  );
+  refreshLive();
+}
+async function closeRoom(){
+  if (!confirm('Close this room for everyone?')) return;
+  try { await ref().remove(); } catch(e){}
+  store.del('trilexis_host');
+  home();
+}
+
+/* ======================================================================
+   STUDENT
+   ====================================================================== */
+function joinScreen(pre){
+  const name = h('input',{class:'inp',type:'text',maxlength:'20',placeholder:'Your name',autocomplete:'off',value:store.get('trilexis_name')||''});
+  const code = h('input',{class:'inp code',type:'text',maxlength:'4',placeholder:'CODE',autocomplete:'off',autocapitalize:'characters',spellcheck:'false',value:pre||''});
+  const msg = h('p',{class:'center',style:'color:var(--bad);margin:0;min-height:1.2em'});
+  const go = async () => {
+    primeSpeech(); msg.textContent = '';
+    const err = await doJoin(name.value, code.value);
+    if (err) msg.textContent = err;
+  };
+  [name, code].forEach(i => i.addEventListener('keydown', e => { if (e.key === 'Enter') go(); }));
+  mount(
+    h('div',{class:'hero'}, h('div',{class:'logo'},'🔑'), h('h1',null,'JOIN')),
+    h('div',{class:'card stack'},
+      h('label',{style:'margin:0'},'Your name'), name,
+      h('label',{style:'margin:6px 0 0'},'Room code from your teacher'), code,
+      msg, btn('🚀 Join game', go), btn('← Back', home, 'ghost'))
+  );
+}
+async function doJoin(rawName, rawCode){
+  const name = rawName.trim().slice(0,20), code = rawCode.toUpperCase().trim();
+  if (!name) return 'Please type your name.';
+  if (!/^[A-Z0-9]{4}$/.test(code)) return 'Room codes have 4 letters or numbers.';
+  try {
+    const base = db.ref('rooms/' + code);
+    const ms = await base.child('meta').get();
+    if (!ms.exists()) return 'Room not found. Check the code.';
+    const ps = await base.child('players').get();
+    const players = ps.val() || {};
+    const savedPid = store.get('trilexis_pid_' + code);
+    let pid = null;
+    if (savedPid && players[savedPid]) pid = savedPid;
+    else {
+      if (Object.values(players).some(p => norm(p.name) === norm(name))) return 'That name is already taken. Add your last initial.';
+      const tx = await base.child('count').transaction(c => { c = c || 0; return c < MAX_PLAYERS ? c + 1 : undefined; });
+      if (!tx.committed) return 'This room is full (' + MAX_PLAYERS + ' players).';
+      pid = uid();
+      await base.child('players/' + pid).set({ name, correct:0, ms:0 });
+      store.set('trilexis_pid_' + code, pid);
+    }
+    store.set('trilexis_name', name);
+    enterPlayer(code, pid);
+    return null;
+  } catch(e){ console.error(e); return 'Could not connect. Check your internet and try again.'; }
+}
+function enterPlayer(code, pid){
+  cleanup(); S = fresh();
+  S.role = 'player'; S.code = code; S.pid = pid;
+  listen(ref('players'), 'value', s => {
+    S.players = s.val() || {};
+    if (S.meta && S.meta.status !== 'word') renderStudent(); else refreshLive();
+  });
+  listen(ref('meta'), 'value', s => {
+    const m = s.val();
+    if (!m) { toast('The host closed the room.'); store.del('trilexis_pid_' + code); return home(); }
+    S.meta = m;
+    const key = m.status + ':' + m.idx;
+    if (key !== S.viewKey) { S.viewKey = key; renderStudent(); }
+  });
+}
+function renderStudent(){
+  clearView();
+  const m = S.meta; if (!m) return;
+  if (m.status === 'lobby') return studentLobby();
+  if (m.status === 'word') return studentWord();
+  if (m.status === 'reveal') return studentReveal();
+  return studentDone();
+}
+function myName(){ return (S.players[S.pid] || {}).name || ''; }
+function studentLobby(){
+  mount(h('div',{class:'card center'},
+    h('div',{class:'logo'},'⏳'), h('h2',null,'You are in, ' + myName() + '!'),
+    h('p',{class:'mute'},'Waiting for the host to start…'),
+    h('span',{class:'pill',id:'pcount'}, '0 / ' + MAX_PLAYERS),
+    h('div',{style:'height:10px'}), h('div',{class:'chips',id:'plist'})));
+  refreshLive();
+}
+function studentWord(){
+  const m = S.meta;
+  const tText = h('div',{class:'timer'}), bar = h('i'), barBox = h('div',{class:'bar'}, bar);
+  const input = h('input',{class:'inp big',type:'text',maxlength:'40',autocomplete:'off',autocapitalize:'off',autocorrect:'off',spellcheck:'false',placeholder:'Type the spelling…'});
+  const status = h('p',{class:'center mute',style:'margin:0;min-height:1.2em'});
+  let locked = false, over = false;
+  const lock = btn('🔒 Lock in answer', submit);
+  function freeze(){ input.disabled = true; lock.disabled = true; }
+  async function submit(){
+    const t = input.value.trim();
+    if (!t || locked || over) return;
+    if (now() > m.endsAt) { over = true; freeze(); status.textContent = "⏰ Time's up!"; return; }
+    locked = true; freeze();
+    try {
+      await ref('answers/' + m.idx + '/' + S.pid).set({ text:t.slice(0,40), t:TS() });
+      status.textContent = '✅ Locked in! Wait for the reveal…';
+    } catch(e){ locked = false; input.disabled = false; lock.disabled = false; status.textContent = 'Could not send. Tap again.'; }
+  }
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+  const r = ref('answers/' + m.idx + '/' + S.pid);
+  const cb = r.on('value', s => {
+    const a = s.val();
+    if (a) { locked = true; freeze(); if (!input.value) input.value = a.text; status.textContent = '✅ Locked in! Wait for the reveal…'; }
+  });
+  S.viewUnsubs.push(() => r.off('value', cb));
+  mount(h('div',{class:'card stack'},
+    h('div',{class:'center'}, h('span',{class:'pill'}, 'Word ' + (m.idx+1) + ' of ' + m.total)),
+    tText, barBox,
+    m.audio ? btn('🔊 Hear the word', () => speak(m.word), 'ghost') : h('div',{class:'verdict',style:'background:var(--warnbg)'}, '🎧 Listen to your host'),
+    m.hint && h('div',{class:'hint'}, m.hint),
+    input, lock, status));
+  runTimer(tText, bar, m.startedAt, m.endsAt, () => { if (!locked) { over = true; freeze(); status.textContent = "⏰ Time's up!"; } });
+  if (m.audio) setTimeout(() => speak(m.word), 300);
+  setTimeout(() => { if (!locked) input.focus(); }, 400);
+}
+function studentReveal(){
+  const m = S.meta, idx = m.idx;
+  const box = h('div',{class:'card'}, h('p',{class:'center mute'},'Checking…'));
+  mount(box, h('div',{class:'card'}, h('h2',null,'🏅 Top 10'), h('div',{class:'board',id:'board'})));
+  refreshLive();
+  Promise.all([ref('results/' + idx).get(), ref('answers/' + idx + '/' + S.pid).get()]).then(([rs, as]) => {
+    const r = rs.val(), a = as.val();
+    if (!r) return;
+    const good = !!(r.ok && r.ok[S.pid]);
+    const rank = ranked().findIndex(p => p.pid === S.pid) + 1;
+    const me = S.players[S.pid] || {};
+    box.replaceChildren(
+      h('div',{class:'verdict ' + (good ? 'good' : 'miss')},
+        good ? '✅ Correct!' : (a ? '❌ Not quite' : '⏰ No answer'),
+        h('span',{class:'sm'}, 'The word was: ' + r.word),
+        a && !good && h('span',{class:'sm'}, 'You typed: ' + a.text)),
+      h('p',{class:'center',style:'margin:12px 0 0;font-weight:700'}, 'Rank #' + (rank||'-') + ' · ' + (me.correct||0) + ' words correct'),
+      h('p',{class:'center mute',style:'margin:4px 0 0'}, 'Waiting for the next word…'));
+  }).catch(() => {});
+}
+function studentDone(){
+  const rank = ranked().findIndex(p => p.pid === S.pid) + 1;
+  const me = S.players[S.pid] || {};
+  mount(
+    h('div',{class:'card center'}, h('div',{class:'logo'},'🏆'), h('h2',null,'Game over!'),
+      h('p',{class:'word'}, '#' + (rank||'-')),
+      h('p',{class:'mute'}, (me.correct||0) + ' words correct')),
+    h('div',{class:'card'}, h('h2',null,'🏅 Top 10'), h('div',{class:'board',id:'board'})),
+    h('div',{class:'card'}, btn('🏠 Home', () => { store.del('trilexis_pid_' + S.code); home(); }, 'ghost'))
+  );
+  refreshLive();
+}
+
+home();
+})();
+</script>
+</body>
+</html>
