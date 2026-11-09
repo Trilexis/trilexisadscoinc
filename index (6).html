@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#6a5cff">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="TRILEXIS">
+<title>TRILEXIS Spelling Showdown</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#f4f2ff;--card:#ffffff;--ink:#1d1b3a;--mute:#6b6890;--pri:#6a5cff;--pri2:#8f7bff;
+  --ok:#16a34a;--bad:#dc2626;--warn:#f59e0b;--line:#e4e0ff;--okbg:#dcfce7;--badbg:#fee2e2;--warnbg:#fef3c7;
+  color-scheme:light dark;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#14122b;--card:#1f1c42;--ink:#f1efff;--mute:#a9a5d6;--line:#34306a;--okbg:#14532d;--badbg:#7f1d1d;--warnbg:#78350f}
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-text-size-adjust:100%}
+body{padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+.wrap{max-width:640px;margin:0 auto;padding:18px 14px 40px}
+.hero{text-align:center;padding:18px 0 8px}
+.logo{font-size:52px;line-height:1}
+h1{margin:6px 0 4px;font-size:34px;letter-spacing:3px;color:var(--pri)}
+h2{margin:0 0 8px;font-size:20px}
+.tag{margin:0;color:var(--mute)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin:14px 0;box-shadow:0 4px 18px rgba(106,92,255,.08)}
+.stack{display:flex;flex-direction:column;gap:10px}
+.btn{font:inherit;font-weight:700;font-size:17px;border:0;border-radius:14px;padding:14px 16px;cursor:pointer;background:var(--pri);color:#fff;width:100%}
+.btn:active{transform:scale(.98)}
+.btn.ghost{background:transparent;color:var(--pri);border:2px solid var(--pri)}
+.btn.ok{background:var(--ok)}
+.btn.bad{background:var(--bad)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn.sm{width:auto;font-size:14px;padding:8px 12px}
+.inp,textarea,select{font:inherit;width:100%;padding:12px 14px;border:2px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink)}
+.inp:focus,textarea:focus,select:focus{outline:none;border-color:var(--pri)}
+.inp.big{font-size:24px;text-align:center;font-weight:700;letter-spacing:1px}
+.inp.code{text-transform:uppercase;letter-spacing:8px;text-align:center;font-size:28px;font-weight:800}
+textarea{min-height:170px;resize:vertical;line-height:1.5}
+label{display:block;font-weight:700;margin:12px 0 6px}
+.mute{color:var(--mute)}.center{text-align:center}
+.notice{border-radius:14px;padding:12px 14px;margin:14px 0;background:var(--warnbg);border:1px solid var(--warn)}
+.roomcode{font-size:56px;font-weight:900;letter-spacing:10px;text-align:center;color:var(--pri);margin:4px 0}
+.chips{display:flex;flex-wrap:wrap;gap:6px;max-height:190px;overflow:auto}
+.chip{background:var(--bg);border:1px solid var(--line);padding:5px 10px;border-radius:999px;font-size:14px}
+.bar{height:12px;border-radius:999px;background:var(--line);overflow:hidden}
+.bar>i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--pri),var(--pri2));transition:width .2s linear}
+.timer{font-size:40px;font-weight:900;text-align:center;color:var(--pri)}
+.word{font-size:44px;font-weight:900;text-align:center;letter-spacing:2px;margin:6px 0;word-break:break-word}
+.hint{text-align:center;color:var(--mute);font-style:italic;margin:4px 0 10px}
+.pill{display:inline-block;padding:4px 12px;border-radius:999px;font-weight:700;font-size:13px;background:var(--line);color:var(--pri)}
+.verdict{border-radius:16px;padding:16px;text-align:center;font-size:20px;font-weight:800}
+.verdict.good{background:var(--okbg);color:var(--ok)}
+.verdict.miss{background:var(--badbg);color:var(--bad)}
+.verdict .sm{display:block;font-size:15px;font-weight:600;margin-top:6px;color:var(--ink)}
+.board{display:flex;flex-direction:column;gap:6px;max-height:420px;overflow:auto}
+.row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:12px;background:var(--bg);border:1px solid var(--line)}
+.row.me{border-color:var(--pri);background:var(--card);box-shadow:0 0 0 2px var(--pri) inset}
+.rk{width:30px;font-weight:900;color:var(--pri)}
+.nm{flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sc{font-weight:800}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:600;z-index:9;max-width:90%;text-align:center}
+.bankgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+.bankgrid .btn{font-size:15px;padding:10px 8px}
+.mean{display:flex;gap:8px;align-items:flex-start;padding:8px 10px;border:1px solid var(--line);border-radius:10px;margin:6px 0;cursor:pointer;font-weight:400}
+.mean input{margin-top:4px;width:auto;flex:none}
+.mean small{color:var(--mute);font-weight:700}
+.tablewrap{overflow-x:auto;border-radius:12px}
+.rt{border-collapse:collapse;font-size:14px;width:100%}
+.rt th,.rt td{border:1px solid var(--line);padding:6px 8px;text-align:center;white-space:nowrap}
+.rt th{background:var(--bg)}
+.rt .tn{text-align:left;font-weight:600}
+.rt .tg{background:var(--okbg);color:var(--ok);font-weight:800}
+.rt .tb{background:var(--badbg);color:var(--bad)}
+.link{word-break:break-all;font-size:13px;color:var(--mute);text-align:center}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+(function(){
+'use strict';
+
+/* ======================================================================
+   🟡 STEP 1 – PASTE YOUR FIREBASE SETTINGS HERE (see the setup guide)
+   ====================================================================== */
+const FIREBASE_CONFIG = {
+  databaseURL: "https://trilexisadscoinc-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "trilexisadscoinc"
+};
+const MAX_PLAYERS = 50;
+
+/* ---------- setup ---------- */
+const libOk = !!window.firebase;
+const configured = !/YOUR-PROJECT/.test(FIREBASE_CONFIG.databaseURL);
+let db = null, offset = 0, online = false, initError = '';
+if (libOk && configured) {
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.database();
+    db.ref('.info/serverTimeOffset').on('value', s => { offset = s.val() || 0; });
+    db.ref('.info/connected').on('value', s => {
+      online = !!s.val();
+      const el = document.getElementById('conn'); if (el) el.textContent = connLabel();
+    });
+  } catch (e) { console.error(e); initError = String(e && e.message || e); }
+}
+function problem(){
+  if (!libOk) return 'The Firebase library did not load. A school/office network, VPN or ad blocker may be blocking it. Try phone data or another browser.';
+  if (!configured) return 'The Firebase database address is missing in index.html.';
+  if (!db) return 'Firebase could not start. ' + initError;
+  return '';
+}
+function connLabel(){ return problem() ? '🔴 Not ready' : (online ? '🟢 Online' : '🟡 Connecting…'); }
+const now = () => Date.now() + offset;
+const TS = () => firebase.database.ServerValue.TIMESTAMP;
+
+/* ---------- helpers ---------- */
+const $app = document.getElementById('app');
+const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const rnd = n => Array.from({length:n}, () => CHARS[Math.floor(Math.random()*CHARS.length)]).join('');
+const uid = () => Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4);
+const norm = s => String(s == null ? '' : s).trim().toLowerCase().replace(/\s+/g,' ');
+const store = {
+  get:(k)=>{ try{return localStorage.getItem(k);}catch(e){return null;} },
+  set:(k,v)=>{ try{localStorage.setItem(k,v);}catch(e){} },
+  del:(k)=>{ try{localStorage.removeItem(k);}catch(e){} }
+};
+
+function h(tag, attrs, ...kids){
+  const e = document.createElement(tag);
+  for (const k in (attrs||{})) {
+    const v = attrs[k];
+    if (k === 'class') e.className = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else if (k === 'value') e.value = v;
+    else if (v !== false && v != null) e.setAttribute(k, v);
+  }
+  for (const c of kids.flat()) { if (c == null || c === false) continue; e.append(c); }
+  return e;
+}
+const btn = (label, fn, cls, disabled) => h('button', {class:'btn '+(cls||''), onclick:fn, disabled: disabled ? '' : false}, label);
+function mount(...nodes){ $app.replaceChildren(h('div',{class:'wrap'}, nodes)); window.scrollTo(0,0); }
+function toast(msg){
+  const t = h('div',{class:'toast'}, msg); document.body.append(t);
+  setTimeout(()=>t.remove(), 2800);
+}
+function speak(text){
+  if (!('speechSynthesis' in window) || !text) return false;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US'; u.rate = 0.8; speechSynthesis.speak(u);
+    return true;
+  } catch(e){ return false; }
+}
+function primeSpeech(){ // unlock audio on iPhone/Android after a tap
+  try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } catch(e){}
+}
+const BANKS = [
+  {label:'🌱 Easy', words:'because friend school people beautiful different favorite together library answer believe children country family nature island neighbor listen weather picture'},
+  {label:'🌿 Medium', words:'necessary separate calendar environment government knowledge language occasion restaurant schedule success temperature vegetable wednesday february appreciate athlete familiar guarantee immediately'},
+  {label:'🔥 Hard', words:'accommodate conscience embarrass entrepreneur hierarchy maintenance millennium occurrence pharmaceutical privilege questionnaire rhythm surveillance unnecessary vacuum bureaucracy conscientious fluorescent miscellaneous perseverance'},
+  {label:'🎓 Academic', words:'analysis hypothesis synthesis argument evidence perspective interpretation vocabulary discourse paragraph thesis bibliography citation methodology phenomenon correlation significant objective conclusion paraphrase'},
+  {label:'💼 Business', words:'customer revenue profit inventory marketing budget investment capital expense supplier strategy negotiation accountant commission consumer advertisement competitor franchise receipt entrepreneurship'},
+  {label:'🔬 Science', words:'photosynthesis ecosystem atmosphere molecule gravity magnetism evaporation condensation chromosome bacteria microscope experiment laboratory thermometer biodiversity habitat metamorphosis organism equilibrium earthquake'},
+  {label:'⚠️ Often misspelled', words:'definitely receive weird tomorrow address embarrassment harass license noticeable parallel playwright recommend referred rhyme supersede twelfth withhold yacht grammar ignorance'}
+].map(b => ({label:b.label, words:b.words.split(' ')}));
+function shuffle(a){ a = a.slice(); for (let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+async function lookup(w){
+  const r = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(w.toLowerCase()));
+  if (r.status === 404) return { notFound:true };
+  if (!r.ok) throw new Error('dictionary error ' + r.status);
+  const data = await r.json();
+  if (!Array.isArray(data) || !data.length) return { notFound:true };
+  const e = data[0];
+  const phon = e.phonetic || (e.phonetics || []).map(p => p.text).find(Boolean) || '';
+  const all = [];
+  data.forEach(en => (en.meanings || []).forEach(m => (m.definitions || []).slice(0,2).forEach(d => {
+    if (d.definition) all.push({ pos:m.partOfSpeech || '', def:d.definition, ex:d.example || '' });
+  })));
+  const example = (all.find(x => x.ex) || {}).ex || '';
+  return { word:e.word || w, phon, meanings:all.slice(0,4), example };
+}
+function maskWord(t, word){
+  if (!t) return '';
+  const wd = String(word).trim();
+  const base = wd.slice(0, Math.max(3, wd.length - 2));
+  const esc = base.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  return String(t).replace(new RegExp('[A-Za-z]*' + esc + '[A-Za-z]*','gi'), '____');
+}
+async function fillWord(w){
+  if (w.hint && w.ex) return;
+  try {
+    const info = await Promise.race([lookup(w.w), new Promise((_,rej) => setTimeout(() => rej(new Error('timeout')), 3500))]);
+    if (info && !info.notFound) {
+      if (!w.hint && info.meanings[0]) w.hint = info.meanings[0].def;
+      if (!w.ex) w.ex = info.meanings[0] && info.meanings[0].ex ? info.meanings[0].ex : info.example;
+    }
+  } catch(e){}
+}
+const prep = w => w.p || (w.p = fillWord(w));
+function parseWords(text){
+  const seen = new Set(), out = [];
+  String(text||'').split('\n').forEach(line => {
+    const parts = line.split('|');
+    const w = (parts[0]||'').trim();
+    const hint = (parts[1]||'').trim();
+    const ex = (parts.slice(2).join(' - ')||'').trim();
+    if (!w || seen.has(norm(w))) return;
+    seen.add(norm(w)); out.push({w, hint, ex});
+  });
+  return out.slice(0, 200);
+}
+
+/* ---------- state ---------- */
+const fresh = () => ({role:null, code:null, pid:null, hostId:null, meta:null, players:{}, answers:{}, words:[], unsubs:[], viewUnsubs:[], viewKey:null, revealing:null});
+let S = fresh();
+let tick = null;
+const ref = p => db.ref('rooms/' + S.code + (p ? '/' + p : ''));
+function listen(r, ev, cb){ r.on(ev, cb); S.unsubs.push(() => r.off(ev, cb)); }
+function clearView(){ S.viewUnsubs.forEach(f => f()); S.viewUnsubs = []; clearInterval(tick); }
+function cleanup(){ clearView(); S.unsubs.forEach(f => f()); S.unsubs = []; try{speechSynthesis.cancel();}catch(e){} }
+function runTimer(textEl, barEl, startedAt, endsAt, onEnd){
+  clearInterval(tick);
+  const total = Math.max(1, endsAt - startedAt);
+  const f = () => {
+    const left = Math.max(0, endsAt - now());
+    textEl.textContent = Math.ceil(left/1000) + 's';
+    barEl.style.width = (100*left/total) + '%';
+    if (left <= 0) { clearInterval(tick); if (onEnd) onEnd(); }
+  };
+  f(); tick = setInterval(f, 200);
+}
+function ranked(){
+  return Object.keys(S.players).map(pid => Object.assign({pid}, S.players[pid]))
+    .sort((a,b) => (b.correct||0)-(a.correct||0) || (a.ms||0)-(b.ms||0) || String(a.name).localeCompare(String(b.name)));
+}
+function boardRows(limit, me){
+  return ranked().slice(0, limit).map((p,i) =>
+    h('div',{class:'row'+(p.pid===me?' me':'')},
+      h('span',{class:'rk'}, i===0?'🥇':i===1?'🥈':i===2?'🥉':String(i+1)),
+      h('span',{class:'nm'}, p.name),
+      h('span',{class:'sc'}, (p.correct||0)+' ✓')));
+}
+function refreshLive(){
+  const n = Object.keys(S.players).length;
+  const pc = document.getElementById('pcount'); if (pc) pc.textContent = n + ' / ' + MAX_PLAYERS;
+  const pl = document.getElementById('plist');
+  if (pl) pl.replaceChildren(...Object.values(S.players).map(p => h('span',{class:'chip'}, p.name)));
+  const ac = document.getElementById('acount');
+  if (ac) ac.textContent = Object.keys(S.answers||{}).length + ' / ' + n + ' answered';
+  const bd = document.getElementById('board');
+  if (bd) bd.replaceChildren(...boardRows(S.role==='host' ? 50 : 10, S.pid));
+}
+
+/* ======================================================================
+   HOME
+   ====================================================================== */
+function home(){
+  cleanup(); S = fresh();
+  const saved = (()=>{ try{return JSON.parse(store.get('trilexis_host')||'null');}catch(e){return null;} })();
+  const pre = (new URLSearchParams(location.search).get('room')||'').toUpperCase();
+  mount(
+    h('div',{class:'hero'},
+      h('div',{class:'logo'},'📖'),
+      h('h1',null,'TRILEXIS'),
+      h('p',{class:'tag'}, '⚡ Spelling Showdown: up to ' + MAX_PLAYERS + ' players, the host picks the words, most words wins!')),
+    problem() && h('div',{class:'notice'}, '🟡 Multiplayer problem: ' + problem() + ' Practice mode still works.'),
+    h('div',{class:'card stack'},
+      btn('🎮 Host a game', hostStart),
+      btn('🔑 Join a game', () => { if (problem()) return toast(problem()); joinScreen(pre); }, 'ghost'),
+      btn('🧑 Practice alone', practice, 'ghost'),
+      saved && !problem() && btn('↩️ Resume my room ' + saved.code, () => resumeHost(saved), 'ghost')),
+    h('p',{class:'center mute',style:'font-size:12px'}, 'Version 6 · ', h('span',{id:'conn'}, connLabel()))
+  );
+  if (pre && !problem()) joinScreen(pre);
+}
+
+/* ======================================================================
+   PRACTICE (offline)
+   ====================================================================== */
+function practice(){
+  cleanup();
+  const list = ['necessary','rhythm','separate','definitely','embarrass','conscience','occurrence','accommodate','privilege','maintenance']
+    .sort(() => Math.random() - .5);
+  let i = 0, score = 0;
+  function ask(){
+    if (i >= list.length) {
+      mount(h('div',{class:'card center'}, h('h2',null,'🏁 Done!'), h('p',{class:'word'}, score + ' / ' + list.length), btn('🏠 Home', home)));
+      return;
+    }
+    const w = list[i];
+    const input = h('input',{class:'inp big',type:'text',autocomplete:'off',autocapitalize:'off',autocorrect:'off',spellcheck:'false',placeholder:'Type the spelling…'});
+    const fb = h('div',{});
+    const go = () => {
+      if (input.disabled) return;
+      input.disabled = true;
+      const ok = norm(input.value) === w; if (ok) score++;
+      fb.replaceChildren(h('div',{class:'verdict '+(ok?'good':'miss')}, ok ? '✅ Correct!' : '❌ It is: ' + w), h('div',{style:'height:10px'}), btn('Next ▶', () => { i++; ask(); }));
+    };
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+    mount(h('div',{class:'card stack'},
+      h('span',{class:'pill'}, 'Word ' + (i+1) + ' of ' + list.length),
+      btn('🔊 Hear the word', () => speak(w), 'ghost'),
+      input, btn('Check', go), fb,
+      btn('🏠 Leave practice', home, 'ghost')));
+    speak(w); setTimeout(() => input.focus(), 50);
+  }
+  ask();
+}
+
+/* ======================================================================
+   HOST
+   ====================================================================== */
+async function hostStart(){
+  if (problem()) return toast(problem());
+  try {
+    let code, tries = 0;
+    do {
+      code = rnd(4);
+      const s = await db.ref('rooms/' + code + '/meta').get();
+      if (!s.exists()) break;
+    } while (++tries < 12);
+    const hostId = uid();
+    await db.ref('rooms/' + code).set({ meta:{ host:hostId, status:'lobby', idx:-1, created:TS() }, count:0 });
+    const rec = { code, hostId };
+    store.set('trilexis_host', JSON.stringify(rec));
+    enterHost(rec);
+  } catch(e){ console.error(e); toast('Could not create the room. Check your Firebase setup.'); }
+}
+async function resumeHost(rec){
+  try {
+    const s = await db.ref('rooms/' + rec.code + '/meta').get();
+    if (!s.exists()) { store.del('trilexis_host'); toast('That room was closed.'); return home(); }
+    enterHost(rec);
+  } catch(e){ toast('Could not reach the room.'); }
+}
+function enterHost(rec){
+  cleanup(); S = fresh();
+  S.role = 'host'; S.code = rec.code; S.hostId = rec.hostId;
+  S.words = parseWords(store.get('trilexis_wordtext') || '');
+  listen(ref('players'), 'value', s => { S.players = s.val() || {}; refreshLive(); checkAll(); });
+  listen(ref('meta'), 'value', s => {
+    const m = s.val();
+    if (!m) { store.del('trilexis_host'); toast('Room closed.'); return home(); }
+    S.meta = m;
+    const key = m.status + ':' + m.idx;
+    if (key !== S.viewKey) { S.viewKey = key; renderHost(); }
+  });
+}
+function joinLink(){ return location.origin + location.pathname + '?room=' + S.code; }
+
+function renderHost(){
+  clearView();
+  const m = S.meta;
+  if (m.status === 'lobby') return hostLobby();
+  if (m.status === 'word') return hostWord();
+  if (m.status === 'reveal') return hostReveal();
+  return hostDone();
+}
+function hostLobby(){
+  const ta = h('textarea',{id:'wordsTa',placeholder:'one word per line\nOptional: word | meaning | example sentence\nbeautiful | pleasing to look at | What a beautiful sunset!\nnecessary'}, '');
+  ta.value = store.get('trilexis_wordtext') || '';
+  const cnt = h('span',{class:'pill'}, '');
+  const updCount = () => { cnt.textContent = parseWords(ta.value).length + ' words ready'; };
+  const save = () => { store.set('trilexis_wordtext', ta.value); updCount(); };
+  ta.addEventListener('input', save);
+  const howMany = h('select',{},
+    h('option',{value:'999'}, 'Add the whole bank'),
+    h('option',{value:'10'}, 'Add 10 random words'),
+    h('option',{value:'5'}, 'Add 5 random words'));
+  function addBank(b){
+    const take = parseInt(howMany.value, 10);
+    let ws = b.words.slice();
+    if (take < ws.length) ws = shuffle(ws).slice(0, take);
+    const have = new Set(parseWords(ta.value).map(x => norm(x.w)));
+    const add = ws.filter(w => !have.has(norm(w)));
+    if (!add.length) return toast('Those words are already in your list.');
+    ta.value = (ta.value.trim() ? ta.value.replace(/\s+$/,'') + '\n' : '') + add.join('\n');
+    save(); toast('Added ' + add.length + ' words');
+  }
+  const shuffleList = () => {
+    const lines = ta.value.split('\n').map(x => x.trim()).filter(Boolean);
+    if (lines.length < 2) return;
+    ta.value = shuffle(lines).join('\n'); save(); toast('Word order shuffled');
+  };
+  const clearList = () => { if (ta.value.trim() && !confirm('Clear all words?')) return; ta.value = ''; save(); };
+  const q = h('input',{class:'inp',type:'text',placeholder:'Type a word, e.g. necessary',autocomplete:'off',autocapitalize:'off',spellcheck:'false'});
+  const out = h('div',{});
+  function addWord(word, meaning, example){
+    const clean = word.replace(/\|/g,'').trim();
+    if (!clean) return;
+    const have = new Set(parseWords(ta.value).map(x => norm(x.w)));
+    if (have.has(norm(clean))) return toast('That word is already in your list.');
+    const cl = v => String(v||'').replace(/\s+/g,' ').replace(/\|/g,'-').trim();
+    const mn = cl(meaning), ex = cl(example);
+    let line = clean;
+    if (mn || ex) line += ' | ' + mn;
+    if (ex) line += ' | ' + ex;
+    ta.value = (ta.value.trim() ? ta.value.replace(/\s+$/,'') + '\n' : '') + line;
+    save(); out.replaceChildren(); q.value = ''; q.focus(); toast('Added "' + clean + '"');
+  }
+  function showResult(w, info){
+    const found = !!info && !info.notFound && !info.error;
+    const word = found ? info.word : w;
+    const meaning = h('textarea',{style:'min-height:70px',placeholder:'Type the meaning students will see (optional)'});
+    const example = h('textarea',{style:'min-height:60px',placeholder:'Type one example sentence (optional)'});
+    const keep = h('input',{type:'checkbox',checked:''});
+    const opts = found ? info.meanings.map((m,i) => {
+      const r = h('input', Object.assign({type:'radio',name:'meanpick'}, i === 0 ? {checked:''} : {}));
+      r.addEventListener('change', () => { meaning.value = m.def; example.value = m.ex || info.example || ''; });
+      return h('label',{class:'mean'}, r, h('span',null, h('small',null, (m.pos ? m.pos + ' · ' : '')), m.def));
+    }) : [];
+    if (found && info.meanings[0]) { meaning.value = info.meanings[0].def; example.value = info.meanings[0].ex || info.example || ''; }
+    const note = found ? null : h('p',{class:'mute'}, info && info.notFound
+      ? 'No meaning found for this word. You can still add it and type your own meaning.'
+      : 'Could not reach the dictionary (check the internet). You can still add the word and type your own meaning.');
+    out.replaceChildren(
+      h('div',{class:'word',style:'font-size:34px'}, word),
+      found && info.phon ? h('div',{class:'hint'}, info.phon) : null,
+      btn('🔊 Hear the word', () => { primeSpeech(); speak(word); }, 'ghost'),
+      note,
+      opts.length ? h('label',null,'Pick a meaning') : null, opts,
+      h('label',null,'Meaning'), meaning,
+      h('label',null,'Example sentence'), example,
+      h('label',{class:'mean',style:'border:0'}, keep, h('span',null,'Save the meaning and example with this word')),
+      btn('➕ Add to my list', () => addWord(word, keep.checked ? meaning.value : '', keep.checked ? example.value : '')));
+    speak(word);
+  }
+  async function doSearch(){
+    const w = q.value.trim(); if (!w) return;
+    primeSpeech();
+    out.replaceChildren(h('p',{class:'mute center'},'Searching…'));
+    let info;
+    try { info = await lookup(w); } catch(e){ console.error(e); info = { error:true }; }
+    showResult(w, info);
+  }
+  q.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+  const time = h('input',{class:'inp',id:'timeIn',type:'number',min:'5',max:'180',value:'30'});
+  const mode = h('select',{id:'audioSel'},
+    h('option',{value:'students'}, '🔊 Each student hears the word on their own device'),
+    h('option',{value:'host'}, '🎤 I will read the word aloud myself'));
+  const autoSel = h('select',{id:'autoSel'},
+    h('option',{value:'auto'}, '⏭️ Go to the next word automatically'),
+    h('option',{value:'manual'}, '👆 I will tap "Next word" myself'));
+  const pauseIn = h('input',{class:'inp',id:'pauseIn',type:'number',min:'2',max:'30',value:'5'});
+  const helpSel = h('select',{id:'helpSel'},
+    h('option',{value:'on'}, '📖 Students can tap a button to see the meaning and an example'),
+    h('option',{value:'off'}, '🚫 No meaning button (spelling only)'));
+  mount(
+    h('div',{class:'card'},
+      h('p',{class:'mute center',style:'margin:0'},'Students: open the game link and enter this room code'),
+      h('div',{class:'roomcode'}, S.code),
+      h('div',{class:'link'}, joinLink()),
+      h('div',{style:'height:10px'}),
+      btn('📋 Copy join link', () => { (navigator.clipboard ? navigator.clipboard.writeText(joinLink()) : Promise.reject()).then(() => toast('Link copied!'), () => toast('Copy it from the screen.')); }, 'ghost')),
+    h('div',{class:'card'},
+      h('h2',null, '👥 Players ', h('span',{class:'pill',id:'pcount'}, '0 / ' + MAX_PLAYERS)),
+      h('div',{class:'chips',id:'plist'})),
+    h('div',{class:'card'},
+      h('h2',null,'🔎 Find and add a word'),
+      h('p',{class:'mute',style:'margin:0 0 8px'},'Search any English word, listen to it, read its meaning, then add it to your list.'),
+      h('div',{style:'display:grid;grid-template-columns:1fr auto;gap:8px'}, q, btn('Search', doSearch, 'sm')),
+      out),
+    h('div',{class:'card'},
+      h('h2',null,'📚 Word banks'),
+      h('p',{class:'mute',style:'margin:0'},'Tap a bank to add its words to your list. You can tap several.'),
+      h('label',null,'How many words per tap?'), howMany,
+      h('div',{class:'bankgrid'}, BANKS.map(b => btn(b.label, () => addBank(b), 'ghost')))),
+    h('div',{class:'card'},
+      h('h2',null,'✏️ Your words ', cnt),
+      h('p',{class:'mute',style:'margin:0 0 8px'},'Type, paste or edit words. Format: word | meaning | example (meaning and example are optional).'),
+      ta,
+      h('div',{class:'two',style:'margin-top:8px'}, btn('🔀 Shuffle order', shuffleList, 'ghost'), btn('🧹 Clear all', clearList, 'ghost')),
+      h('label',null,'⏱️ Seconds per word'), time,
+      h('label',null,'How should students hear the word?'), mode,
+      h('label',null,'After each word'), autoSel,
+      h('label',null,'⏳ Seconds to show the answer before the next word'), pauseIn,
+      h('label',null,'📖 Meaning button for students'), helpSel),
+    h('div',{class:'card stack'},
+      btn('▶️ Start the game', startGame),
+      btn('🗑️ Close room', closeRoom, 'ghost'))
+  );
+  updCount();
+  refreshLive();
+}
+async function startGame(){
+  const text = document.getElementById('wordsTa').value;
+  const words = parseWords(text);
+  if (!words.length) return toast('Add at least one word first.');
+  if (!Object.keys(S.players).length && !confirm('No students have joined yet. Start anyway?')) return;
+  const time = Math.min(180, Math.max(5, parseInt(document.getElementById('timeIn').value, 10) || 30));
+  const audio = document.getElementById('audioSel').value === 'students';
+  const auto = document.getElementById('autoSel').value === 'auto';
+  const help = document.getElementById('helpSel').value === 'on';
+  const pause = Math.min(30, Math.max(2, parseInt(document.getElementById('pauseIn').value, 10) || 5));
+  store.set('trilexis_wordtext', text);
+  S.words = words;
+  primeSpeech();
+  try { await ref('meta').update({ total: words.length, time, audio, auto, pause, help }); await nextWord(); }
+  catch(e){ toast('Could not start. Try again.'); }
+}
+async function nextWord(){
+  const idx = (S.meta.idx == null ? -1 : S.meta.idx) + 1;
+  if (S.adv === idx) return;
+  S.adv = idx;
+  try {
+    if (idx >= S.words.length) { await ref('meta').update({ status:'done' }); return; }
+    const w = S.words[idx];
+    const help = !!S.meta.help;
+    if (help) await prep(w);
+    const start = now();
+    S.revealing = null;
+    await ref('meta').update({
+      status:'word', idx, startedAt:start, endsAt:start + S.meta.time*1000,
+      word: S.meta.audio ? w.w : null,
+      hint: help && w.hint ? maskWord(w.hint, w.w) : null,
+      ex: help && w.ex ? maskWord(w.ex, w.w) : null
+    });
+    if (help && S.words[idx+1]) prep(S.words[idx+1]);
+  } catch(e){ console.error(e); S.adv = null; toast('Could not continue. Tap again.'); }
+}
+function hostWord(){
+  const m = S.meta, w = S.words[m.idx] || {w:'(word list lost – reveal and continue)', hint:''};
+  const tText = h('div',{class:'timer'}), bar = h('i'), barBox = h('div',{class:'bar'}, bar);
+  S.answers = {};
+  const r = ref('answers/' + m.idx);
+  const cb = r.on('value', s => { S.answers = s.val() || {}; refreshLive(); checkAll(); });
+  S.viewUnsubs.push(() => r.off('value', cb));
+  mount(h('div',{class:'card stack'},
+    h('div',{class:'center'}, h('span',{class:'pill'}, 'Word ' + (m.idx+1) + ' of ' + m.total)),
+    tText, barBox,
+    h('div',{class:'word'}, w.w),
+    w.hint ? h('div',{class:'hint'}, '📖 ' + w.hint) : null,
+    w.ex ? h('div',{class:'hint'}, '✏️ “' + w.ex + '”') : null,
+    btn('🔊 Say it again', () => speak(w.w), 'ghost'),
+    h('div',{class:'center'}, h('span',{class:'pill',id:'acount'}, '0 / 0 answered')),
+    btn('⏭️ Reveal now', reveal, 'ghost')));
+  refreshLive();
+  runTimer(tText, bar, m.startedAt, m.endsAt, () => setTimeout(reveal, 1500));
+}
+function checkAll(){
+  const m = S.meta; if (!m || m.status !== 'word' || S.role !== 'host') return;
+  const n = Object.keys(S.players).length;
+  if (n > 0 && Object.keys(S.answers||{}).length >= n) setTimeout(reveal, 700);
+}
+async function reveal(){
+  const m = S.meta;
+  if (!m || m.status !== 'word' || S.revealing === m.idx) return;
+  S.revealing = m.idx;
+  try {
+    const word = (S.words[m.idx] || {w:''}).w;
+    const snap = await ref('answers/' + m.idx).get();
+    const ans = snap.val() || {};
+    const upd = {}, ok = {};
+    Object.keys(S.players).forEach(pid => {
+      const p = S.players[pid], a = ans[pid];
+      const good = !!a && a.t <= m.endsAt + 2500 && norm(a.text) === norm(word);
+      ok[pid] = good;
+      if (good) {
+        upd['players/' + pid + '/correct'] = (p.correct||0) + 1;
+        upd['players/' + pid + '/ms'] = (p.ms||0) + Math.max(0, a.t - m.startedAt);
+      }
+    });
+    const wd = S.words[m.idx] || {};
+    upd['results/' + m.idx] = { word, ok, hint: wd.hint || null, ex: wd.ex || null };
+    upd['meta/status'] = 'reveal';
+    await db.ref('rooms/' + S.code).update(upd);
+  } catch(e){ console.error(e); S.revealing = null; toast('Reveal failed. Tap Reveal again.'); }
+}
+function hostReveal(){
+  const m = S.meta, w = S.words[m.idx] || {w:''};
+  const last = m.idx + 1 >= m.total;
+  const info = h('div',{class:'mute',style:'font-weight:700'}, '');
+  let pauseBtn = null;
+  if (m.auto) {
+    const endAt = now() + (m.pause || 5) * 1000;
+    const f = () => {
+      const left = Math.max(0, Math.ceil((endAt - now()) / 1000));
+      info.textContent = (last ? '🏆 Winners in ' : '⏭️ Next word in ') + left + 's…';
+      if (left <= 0) { clearInterval(tick); nextWord(); }
+    };
+    f(); tick = setInterval(f, 250);
+    pauseBtn = btn('⏸ Pause auto-advance', () => { clearInterval(tick); info.textContent = 'Paused. Tap the button when you are ready.'; pauseBtn.remove(); }, 'ghost');
+  }
+  mount(
+    h('div',{class:'card stack center'},
+      h('span',{class:'pill'}, 'Word ' + (m.idx+1) + ' of ' + m.total),
+      h('div',{class:'word'}, w.w),
+      w.hint ? h('div',{class:'hint'}, '📖 ' + w.hint) : null,
+      w.ex ? h('div',{class:'hint'}, '✏️ “' + w.ex + '”') : null,
+      h('div',{id:'rightcount',class:'mute'}, ''),
+      info,
+      btn(last ? '🏆 Finish and show winners' : 'Next word ▶', nextWord),
+      pauseBtn),
+    h('div',{class:'card'}, h('h2',null,'🏅 Leaderboard'), h('div',{class:'board',id:'board'}))
+  );
+  refreshLive();
+  ref('results/' + m.idx).get().then(s => {
+    const r = s.val(); if (!r) return;
+    const okN = Object.values(r.ok || {}).filter(Boolean).length;
+    const el = document.getElementById('rightcount');
+    if (el) el.textContent = '✅ ' + okN + ' of ' + Object.keys(r.ok||{}).length + ' spelled it right';
+  });
+}
+function hostDone(){
+  const box = h('div',{class:'card'}, h('p',{class:'mute center'},'Loading detailed results…'));
+  const csvBtn = btn('⬇️ Download results (opens in Excel)', () => {}, '', true);
+  mount(
+    h('div',{class:'card center'}, h('div',{class:'logo'},'🏆'), h('h2',null,'Final results')),
+    h('div',{class:'card'}, h('h2',null,'🏅 Ranking'), h('div',{class:'board',id:'board'})),
+    box,
+    h('div',{class:'card stack'},
+      csvBtn,
+      h('p',{class:'mute center',style:'margin:0'},'Download first: closing the room deletes all results.'),
+      btn('🗑️ Close room and go home', closeRoom, 'ghost'))
+  );
+  refreshLive();
+  loadDetails(box, csvBtn);
+}
+async function loadDetails(box, csvBtn){
+  try {
+    const [rs, as] = await Promise.all([ref('results').get(), ref('answers').get()]);
+    const R = rs.val() || {}, A = as.val() || {};
+    const total = S.meta.total || 0;
+    const words = [];
+    for (let i = 0; i < total; i++) words.push((R[i] && R[i].word) || (S.words[i] && S.words[i].w) || '?');
+    const rows = ranked();
+    const okOf = (i, pid) => !!(R[i] && R[i].ok && R[i].ok[pid]);
+    const typedOf = (i, pid) => { const a = (A[i] || {})[pid]; return a ? a.text : ''; };
+    const head = h('tr',null, h('th',null,'#'), h('th',null,'Student'), h('th',null,'Score'), words.map((w,i) => h('th',null,(i+1) + '. ' + w)));
+    const body = rows.map((p,ri) => h('tr',null,
+      h('td',null, String(ri+1)), h('td',{class:'tn'}, p.name), h('td',null, (p.correct||0) + '/' + total),
+      words.map((w,i) => {
+        const ok = okOf(i, p.pid), t = typedOf(i, p.pid);
+        return h('td',{class: ok ? 'tg' : 'tb'}, ok ? '✓' : (t ? '✗ ' + t : '—'));
+      })));
+    box.replaceChildren(
+      h('h2',null,'📋 Every student, every word'),
+      h('p',{class:'mute',style:'margin:0 0 8px'},'✓ correct · ✗ wrong (shows what the student typed) · — no answer'),
+      h('div',{class:'tablewrap'}, h('table',{class:'rt'}, h('thead',null,head), h('tbody',null,body))));
+    const esc = v => '"' + String(v).replace(/"/g,'""') + '"';
+    const lines = [['Rank','Student','Correct','Total words'].concat(words.map((w,i) => (i+1) + '. ' + w))];
+    rows.forEach((p,ri) => lines.push([ri+1, p.name, p.correct||0, total].concat(words.map((w,i) => {
+      const t = typedOf(i, p.pid);
+      return (t || '(no answer)') + (okOf(i, p.pid) ? ' - correct' : ' - wrong');
+    }))));
+    const csv = '\ufeff' + lines.map(r => r.map(esc).join(',')).join('\r\n');
+    csvBtn.disabled = false;
+    csvBtn.onclick = () => {
+      const url = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
+      const a = h('a',{href:url,download:'trilexis-results-' + S.code + '.csv'});
+      document.body.append(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    };
+  } catch(e){
+    console.error(e);
+    box.replaceChildren(h('p',{class:'center',style:'color:var(--bad)'},'Could not load the detailed results.'), btn('Try again', () => loadDetails(box, csvBtn), 'ghost'));
+  }
+}
+async function closeRoom(){
+  if (!confirm('Close this room for everyone?')) return;
+  try { await ref().remove(); } catch(e){}
+  store.del('trilexis_host');
+  home();
+}
+
+/* ======================================================================
+   STUDENT
+   ====================================================================== */
+function joinScreen(pre){
+  const name = h('input',{class:'inp',type:'text',maxlength:'20',placeholder:'Your name',autocomplete:'off',value:store.get('trilexis_name')||''});
+  const code = h('input',{class:'inp code',type:'text',maxlength:'4',placeholder:'CODE',autocomplete:'off',autocapitalize:'characters',spellcheck:'false',value:pre||''});
+  const msg = h('p',{class:'center',style:'color:var(--bad);margin:0;min-height:1.2em'});
+  const go = async () => {
+    primeSpeech(); msg.textContent = '';
+    const err = await doJoin(name.value, code.value);
+    if (err) msg.textContent = err;
+  };
+  [name, code].forEach(i => i.addEventListener('keydown', e => { if (e.key === 'Enter') go(); }));
+  mount(
+    h('div',{class:'hero'}, h('div',{class:'logo'},'🔑'), h('h1',null,'JOIN')),
+    h('div',{class:'card stack'},
+      h('label',{style:'margin:0'},'Your name'), name,
+      h('label',{style:'margin:6px 0 0'},'Room code from your teacher'), code,
+      msg, btn('🚀 Join game', go), btn('← Back', home, 'ghost'))
+  );
+}
+async function doJoin(rawName, rawCode){
+  const name = rawName.trim().slice(0,20), code = rawCode.toUpperCase().trim();
+  if (!name) return 'Please type your name.';
+  if (!/^[A-Z0-9]{4}$/.test(code)) return 'Room codes have 4 letters or numbers.';
+  try {
+    const base = db.ref('rooms/' + code);
+    const ms = await base.child('meta').get();
+    if (!ms.exists()) return 'Room not found. Check the code.';
+    const ps = await base.child('players').get();
+    const players = ps.val() || {};
+    const savedPid = store.get('trilexis_pid_' + code);
+    let pid = null;
+    if (savedPid && players[savedPid]) pid = savedPid;
+    else {
+      if (Object.values(players).some(p => norm(p.name) === norm(name))) return 'That name is already taken. Add your last initial.';
+      const tx = await base.child('count').transaction(c => { c = c || 0; return c < MAX_PLAYERS ? c + 1 : undefined; });
+      if (!tx.committed) return 'This room is full (' + MAX_PLAYERS + ' players).';
+      pid = uid();
+      await base.child('players/' + pid).set({ name, correct:0, ms:0 });
+      store.set('trilexis_pid_' + code, pid);
+    }
+    store.set('trilexis_name', name);
+    enterPlayer(code, pid);
+    return null;
+  } catch(e){ console.error(e); return 'Could not connect. Check your internet and try again.'; }
+}
+function enterPlayer(code, pid){
+  cleanup(); S = fresh();
+  S.role = 'player'; S.code = code; S.pid = pid;
+  listen(ref('players'), 'value', s => {
+    S.players = s.val() || {};
+    if (S.meta && S.meta.status !== 'word') renderStudent(); else refreshLive();
+  });
+  listen(ref('meta'), 'value', s => {
+    const m = s.val();
+    if (!m) { toast('The host closed the room.'); store.del('trilexis_pid_' + code); return home(); }
+    S.meta = m;
+    const key = m.status + ':' + m.idx;
+    if (key !== S.viewKey) { S.viewKey = key; renderStudent(); }
+  });
+}
+function renderStudent(){
+  clearView();
+  const m = S.meta; if (!m) return;
+  if (m.status === 'lobby') return studentLobby();
+  if (m.status === 'word') return studentWord();
+  if (m.status === 'reveal') return studentReveal();
+  return studentDone();
+}
+function myName(){ return (S.players[S.pid] || {}).name || ''; }
+function studentLobby(){
+  mount(h('div',{class:'card center'},
+    h('div',{class:'logo'},'⏳'), h('h2',null,'You are in, ' + myName() + '!'),
+    h('p',{class:'mute'},'Waiting for the host to start…'),
+    h('span',{class:'pill',id:'pcount'}, '0 / ' + MAX_PLAYERS),
+    h('div',{style:'height:10px'}), h('div',{class:'chips',id:'plist'})));
+  refreshLive();
+}
+function studentWord(){
+  const m = S.meta;
+  const tText = h('div',{class:'timer'}), bar = h('i'), barBox = h('div',{class:'bar'}, bar);
+  const input = h('input',{class:'inp big',type:'text',maxlength:'40',autocomplete:'off',autocapitalize:'off',autocorrect:'off',spellcheck:'false',placeholder:'Type the spelling…'});
+  const status = h('p',{class:'center mute',style:'margin:0;min-height:1.2em'});
+  let locked = false, over = false;
+  const lock = btn('🔒 Lock in answer', submit);
+  function freeze(){ input.disabled = true; lock.disabled = true; }
+  async function submit(){
+    const t = input.value.trim();
+    if (!t || locked || over) return;
+    if (now() > m.endsAt) { over = true; freeze(); status.textContent = "⏰ Time's up!"; return; }
+    locked = true; freeze();
+    try {
+      await ref('answers/' + m.idx + '/' + S.pid).set({ text:t.slice(0,40), t:TS() });
+      status.textContent = '✅ Locked in! Wait for the reveal…';
+    } catch(e){ locked = false; input.disabled = false; lock.disabled = false; status.textContent = 'Could not send. Tap again.'; }
+  }
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+  const hasHelp = !!(m.help && (m.hint || m.ex));
+  const helpBox = h('div',{style:'display:none;padding:12px 14px;border-radius:14px;background:var(--bg);border:1px solid var(--line);line-height:1.5'},
+    m.hint ? h('div',null, h('b',null,'📖 Meaning: '), m.hint) : null,
+    m.ex ? h('div',{style:'margin-top:8px'}, h('b',null,'✏️ Example: '), h('i',null,'“' + m.ex + '”')) : null);
+  const helpBtn = btn('📖 Meaning & example', () => {
+    const open = helpBox.style.display !== 'none';
+    helpBox.style.display = open ? 'none' : 'block';
+    helpBtn.textContent = open ? '📖 Meaning & example' : '🙈 Hide meaning & example';
+  }, 'ghost');
+  const r = ref('answers/' + m.idx + '/' + S.pid);
+  const cb = r.on('value', s => {
+    const a = s.val();
+    if (a) { locked = true; freeze(); if (!input.value) input.value = a.text; status.textContent = '✅ Locked in! Wait for the reveal…'; }
+  });
+  S.viewUnsubs.push(() => r.off('value', cb));
+  mount(h('div',{class:'card stack'},
+    h('div',{class:'center'}, h('span',{class:'pill'}, 'Word ' + (m.idx+1) + ' of ' + m.total)),
+    tText, barBox,
+    m.audio ? btn('🔊 Hear the word', () => speak(m.word), 'ghost') : h('div',{class:'verdict',style:'background:var(--warnbg)'}, '🎧 Listen to your host'),
+    hasHelp ? helpBtn : null,
+    hasHelp ? helpBox : null,
+    input, lock, status));
+  runTimer(tText, bar, m.startedAt, m.endsAt, () => { if (!locked) { over = true; freeze(); status.textContent = "⏰ Time's up!"; } });
+  if (m.audio) setTimeout(() => speak(m.word), 300);
+  setTimeout(() => { if (!locked) input.focus(); }, 400);
+}
+function studentReveal(){
+  const m = S.meta, idx = m.idx;
+  const box = h('div',{class:'card'}, h('p',{class:'center mute'},'Checking…'));
+  mount(box, h('div',{class:'card'}, h('h2',null,'🏅 Top 10'), h('div',{class:'board',id:'board'})));
+  refreshLive();
+  Promise.all([ref('results/' + idx).get(), ref('answers/' + idx + '/' + S.pid).get()]).then(([rs, as]) => {
+    const r = rs.val(), a = as.val();
+    if (!r) return;
+    const good = !!(r.ok && r.ok[S.pid]);
+    const rank = ranked().findIndex(p => p.pid === S.pid) + 1;
+    const me = S.players[S.pid] || {};
+    box.replaceChildren(
+      h('div',{class:'verdict ' + (good ? 'good' : 'miss')},
+        good ? '✅ Correct!' : (a ? '❌ Not quite' : '⏰ No answer'),
+        h('span',{class:'sm'}, 'The word was: ' + r.word),
+        a && !good && h('span',{class:'sm'}, 'You typed: ' + a.text)),
+      ...(r.hint ? [h('p',{class:'center',style:'margin:12px 0 0'}, h('b',null,'📖 Meaning: '), r.hint)] : []),
+      ...(r.ex ? [h('p',{class:'center mute',style:'margin:6px 0 0;font-style:italic'}, '“' + r.ex + '”')] : []),
+      h('p',{class:'center',style:'margin:12px 0 0;font-weight:700'}, 'Rank #' + (rank||'-') + ' · ' + (me.correct||0) + ' words correct'),
+      h('p',{class:'center mute',style:'margin:4px 0 0'}, (m.auto ? 'Next word is coming up…' : 'Waiting for the host…')));
+  }).catch(() => {});
+}
+function studentDone(){
+  const rank = ranked().findIndex(p => p.pid === S.pid) + 1;
+  const me = S.players[S.pid] || {};
+  mount(
+    h('div',{class:'card center'}, h('div',{class:'logo'},'🏆'), h('h2',null,'Game over!'),
+      h('p',{class:'word'}, '#' + (rank||'-')),
+      h('p',{class:'mute'}, (me.correct||0) + ' words correct')),
+    h('div',{class:'card'}, h('h2',null,'🏅 Top 10'), h('div',{class:'board',id:'board'})),
+    h('div',{class:'card'}, btn('🏠 Home', () => { store.del('trilexis_pid_' + S.code); home(); }, 'ghost'))
+  );
+  refreshLive();
+}
+
+home();
+})();
+</script>
+</body>
+</html>
